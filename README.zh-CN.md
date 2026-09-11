@@ -92,7 +92,7 @@ herdr plugin action invoke hhdebb.herdr-radar.state-start
 
 ```
 dashboard
-  ⣟ ✳ Implement OAuth scopes            ← working：装了图标字体是菊花，没装是盲文点阵
+  ⣟ ✳ Implement OAuth scopes            ← working：盲文转圈，标题用厂商色
   ✓ ✳ Wire retry budget into dispatcher ← done：绿勾，保持到你看过
   └─  feature/mc-13200                  ← worktree 挂在它的仓库下面
     ? Λ Which env file should I edit?   ← blocked：一闪一闪的红标记，它在问你

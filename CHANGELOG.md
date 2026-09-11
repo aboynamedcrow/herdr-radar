@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- The working spinner is eight-dot braille again. Six dots read thinner than
+  the text beside them, and the icon font's twelve-spoke throbber only ever
+  showed on a terminal carrying that font. A full braille cell is the mark
+  that reads as motion from across the panel. The throbber's glyphs stay in
+  the font (U+E1C6..U+E1D1); nothing renders them.
+- A working title wears its vendor's colour again, instead of one warm colour
+  for all of them. With thirty rows the hue is what separates one running
+  session from the next before any of them is read. This brings back a copy of
+  the agent row per vendor (`rows_by_agent`): a value rule can colour a logo,
+  whose value is the vendor's glyph, but not a title, whose value is prose.
+
 ## 1.2.1
 
 - Fix `agents_panel = herdr` reverting to the plugin a moment after it was

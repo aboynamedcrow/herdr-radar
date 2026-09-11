@@ -100,7 +100,7 @@ what the third line is for.
 
 ```
 dashboard
-  ⣟ ✳ Implement OAuth scopes            ← working: a throbber with the icon font, braille without
+  ⣟ ✳ Implement OAuth scopes            ← working: braille spinner, title in the vendor's colour
   ✓ ✳ Wire retry budget into dispatcher ← done: green tick, held until you look
   └─  feature/mc-13200                  ← a worktree under its repository
     ? Λ Which env file should I edit?   ← blocked: a pulsing red mark, it is asking you
