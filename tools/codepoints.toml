@@ -1,5 +1,5 @@
 family = "Herdr Agent Icons Max"
-version = "1.7.0"
+version = "1.8.0"
 
 [glyphs]
 claude = "E1A0"
@@ -20,6 +20,10 @@ gemini = "E1AE"
 gpt = "E1AF"
 qwen = "E1B0"
 grok = "E1B1"
+# E1B2 / E1B3 留给 PR #1 的 agy 与 kiro,合并时它们落在那里。
+amp = "E1B4"
+devin = "E1B5"
+qodercli = "E1B6"
 
 # Lifecycle states. E1B2-E1BF stays free for future vendor marks.
 state_done = "E1C0"
@@ -80,3 +84,6 @@ gemini = 1.64
 gpt = 1.64
 qwen = 1.64
 grok = 1.64
+amp = 1.64
+devin = 1.43
+qodercli = 1.60

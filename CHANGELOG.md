@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Amp, Devin and Qoder have marks. Herdr detects all three and the sidebar gave
+  them a bare title and the fallback amber; they take U+E1B4–E1B6, leaving the
+  two codepoints ahead of them for the pull request that draws Antigravity and
+  Kiro. None of the three carries a colour: two sign in black, and Amp's red
+  sits five degrees from the red that already means "waiting on you" here.
 - Vendor colours are the vendors' own now, checked against the marks the
   companies publish: Kimi, DeepSeek and Qwen gain theirs, Cline and Kilo are
   carried at their own hue with a moved lightness (as published, one dies on a
