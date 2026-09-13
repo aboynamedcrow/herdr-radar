@@ -2,11 +2,24 @@
 
 ## Unreleased
 
+- Vendor colours are the vendors' own now, checked against the marks the
+  companies publish: Kimi, DeepSeek and Qwen gain theirs, Cline and Kilo are
+  carried at their own hue with a moved lightness (as published, one dies on a
+  dark panel and the other on a light one), and the invented indigo and slate
+  that Codex and Grok wore are gone. A brand that signs in black gets no
+  colour at all — the cell leaves its `fg` unset, so the mark inherits the
+  row's ink and follows the terminal's theme, which a static hex cannot.
+- Only agent ids Herdr recognises are named under `rows_by_agent`. An id it
+  does not know is not a warning: the config file fails to parse and every
+  plugin falls back to defaults, keybindings included.
+- The tab-bar `cwd` hook receives the pane it is answering for, like every
+  other hook.
+- Codex draws the OpenAI mark, the same one GPT has.
 - The working spinner is eight-dot braille again. Six dots read thinner than
   the text beside them, and the icon font's twelve-spoke throbber only ever
   showed on a terminal carrying that font. A full braille cell is the mark
-  that reads as motion from across the panel. The throbber's glyphs stay in
-  the font (U+E1C6..U+E1D1); nothing renders them.
+  that reads as motion from across the panel. The throbber's twelve glyphs
+  left the font with it: an unused mark is one more thing to keep building.
 - A working title wears its vendor's colour again, instead of one warm colour
   for all of them. With thirty rows the hue is what separates one running
   session from the next before any of them is read. This brings back a copy of
