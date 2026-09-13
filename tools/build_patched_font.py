@@ -6,6 +6,16 @@ point: our icon-only face would leave it with no Latin at all.
 Zero rescaling: the icon font's metrics were copied from JetBrains Mono in the
 first place (UPM 1000, advance 600, ascent 1020), so glyphs transplant as-is.
 
+The base face is deliberately not in this repository: it is megabytes of
+upstream release that every build only reads. Fetch it when you need it, at the
+version THIRD_PARTY_NOTICES.md records:
+
+    curl -fsSLO https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip
+    unzip -j JetBrainsMono-2.304.zip fonts/ttf/JetBrainsMono-Regular.ttf
+
+Run this after every icon-font change: the patched face carries a copy of the
+glyphs, so it goes stale silently otherwise.
+
 Usage: build_patched_font.py <JetBrainsMono-Regular.ttf> [output.ttf]
 """
 import hashlib

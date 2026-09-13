@@ -39,7 +39,7 @@ See each project's repository for license details and modifications.
 ## JetBrains Mono
 
 `dist/JetBrainsMonoHerdr-Regular.ttf` is JetBrains Mono v2.304 (© 2020 The JetBrains
-Mono Project Authors, SIL Open Font License 1.1) with this project's 38 icon glyphs
+Mono Project Authors, SIL Open Font License 1.1) with this project's 29 icon glyphs
 patched in and the family renamed to "JetBrains Mono Herdr", as the OFL requires for a
 modified build. The OFL text ships alongside it as `dist/OFL.txt`; the font's own
 copyright and license name records are kept intact.

@@ -14,10 +14,9 @@
   grok write their own names and are untouched, as is any title an agent
   actually wrote.
 - `dist/JetBrainsMonoHerdr-Regular.ttf` is rebuilt from the same JetBrains Mono
-  2.304 base. It had been left at 24 icon glyphs while the icon font grew, so a
-  terminal that takes one font file and no fallback was missing the lifecycle
-  marks as well as the newest vendors. It trails the icon font again already —
-  rebuilding it needs the upstream face, which is not in this repository.
+  2.304 base, carrying the same 29 icons as the icon font. It had been left at
+  24 glyphs while the icon font grew, so a terminal that takes one font file and
+  no fallback was missing the lifecycle marks as well as the newest vendors.
 - Kiro wears the purple it publishes. Antigravity publishes a monochrome mark
   and so wears no colour at all, which is how every brand without a hue is
   treated here.
