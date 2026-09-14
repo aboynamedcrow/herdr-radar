@@ -8,6 +8,11 @@
     "node": ">=18"
   },
   "scripts": {
-    "check": "node tools/check.js"
+    "check": "node tools/check.js",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
   }
 }

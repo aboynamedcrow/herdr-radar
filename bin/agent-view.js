@@ -62,9 +62,7 @@ async function standalone(flag, message, current) {
 
   const reply = next ? await view.apply(next) : await view.clear();
   if (!reply || reply.error) {
-    console.log(
-      `agent view: ${next ? 'set' : 'clear'} failed${reply?.error ? ` (${reply.error.code})` : ''}`,
-    );
+    console.log(`agent view: ${next ? 'set' : 'clear'} failed${reply?.error ? ` (${reply.error.code})` : ''}`);
     process.exitCode = 1;
     return;
   }

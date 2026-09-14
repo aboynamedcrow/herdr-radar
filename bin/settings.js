@@ -113,7 +113,15 @@ const FIELDS = [
     fallback: 120,
     help: 'After this long without a turn an idle pane fades to stale.',
   },
-  { key: 'group_indent', kind: 'number', step: 1, min: 0, max: 8, fallback: 2, help: 'Spaces members sit in under a workspace header; 0 = flat list.' },
+  {
+    key: 'group_indent',
+    kind: 'number',
+    step: 1,
+    min: 0,
+    max: 8,
+    fallback: 2,
+    help: 'Spaces members sit in under a workspace header; 0 = flat list.',
+  },
   { key: 'group_gap', kind: 'bool', fallback: true, help: 'A blank row between workspace groups.' },
   { key: 'show_tab', kind: 'bool', fallback: false, help: 'Show the tab number on the state line.' },
   {
@@ -139,14 +147,14 @@ const FIELDS = [
     table: 'colors',
     kind: 'color',
     fallback: palette.chrome.light.active_row_bg,
-    help: 'Selected-row fill written to [theme.custom] for a light theme. Empty = keep the theme\'s own.',
+    help: "Selected-row fill written to [theme.custom] for a light theme. Empty = keep the theme's own.",
   },
   {
     key: 'active_row_bg_dark',
     table: 'colors',
     kind: 'color',
     fallback: palette.chrome.dark.active_row_bg,
-    help: 'Selected-row fill for a dark theme. Empty = keep the theme\'s own.',
+    help: "Selected-row fill for a dark theme. Empty = keep the theme's own.",
   },
 ];
 
@@ -173,7 +181,7 @@ function currentValues(text) {
       values.set(field, field.read());
       continue;
     }
-    const holder = field.table ? raw[field.table] ?? {} : raw;
+    const holder = field.table ? (raw[field.table] ?? {}) : raw;
     values.set(field, holder[field.key]);
   }
   return values;
@@ -209,7 +217,11 @@ function saveValues(text, values) {
   let next = editTopLevel(text, top);
   for (const [table, edits] of Object.entries(tables)) {
     const edited = editTable(next, table, edits);
-    next = edited ?? `${next.replace(/\n*$/, '')}\n\n[${table}]\n${Object.entries(edits).map(([k, v]) => `${k} = ${v}`).join('\n')}\n`;
+    next =
+      edited ??
+      `${next.replace(/\n*$/, '')}\n\n[${table}]\n${Object.entries(edits)
+        .map(([k, v]) => `${k} = ${v}`)
+        .join('\n')}\n`;
   }
   const file = configFile();
   ensureDir(path.dirname(file));

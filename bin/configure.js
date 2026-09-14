@@ -66,7 +66,11 @@ async function main() {
     // from, so this action is the one place the whole teardown can happen.
     // Every token goes too — with the blocks gone nothing renders them.
     if (mode === '--uninstall') {
-      console.log((await stopAnimator({ purge: true })) ? 'daemon: stopped, tokens cleared' : 'daemon: still running, tokens cleared');
+      console.log(
+        (await stopAnimator({ purge: true }))
+          ? 'daemon: stopped, tokens cleared'
+          : 'daemon: still running, tokens cleared',
+      );
     }
     const result = mode === '--apply' ? managed.apply() : managed.remove();
     console.log(result.message);

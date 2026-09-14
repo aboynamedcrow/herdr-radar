@@ -1,0 +1,15 @@
+# Build output and artwork: nothing here is source, and reformatting it would
+# only churn bytes.
+dist/
+assets/
+node_modules/
+
+# Markdown here is hand-set prose. The three READMEs break their lines where
+# the sense breaks and the tables are aligned by hand; Prettier leaves prose
+# alone by default but still rewrites list markers, emphasis and table
+# alignment, which buys noise rather than consistency. What needs guarding is
+# the code, not the writing.
+*.md
+
+# A hand-built page, laid out against how it renders.
+tools/banner.html

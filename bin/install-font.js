@@ -21,7 +21,10 @@ function main() {
     console.log(`font    ${installed ? 'installed' : 'absent'}  ${installed ?? font.userFontDir()}`);
     return;
   }
-  const notes = mode === '--uninstall' ? [...font.uninstall(), ...font.unconfigureTerminals()] : [...font.install(), ...font.configureTerminals()];
+  const notes =
+    mode === '--uninstall'
+      ? [...font.uninstall(), ...font.unconfigureTerminals()]
+      : [...font.install(), ...font.configureTerminals()];
   for (const note of notes) console.log(note);
   if (mode !== '--uninstall') {
     console.log('done. New terminal windows pick the font up; some terminals need a full restart.');

@@ -36,7 +36,6 @@ const { compose } = require('../lib/tabline');
 // cache file. This entry point stays for live debugging (--debug prints the
 // decision trail) and as the fallback renderer when no daemon exists.
 
-
 const debug = process.argv.includes('--debug');
 const notes = [];
 
@@ -64,8 +63,6 @@ function activePane() {
   };
 }
 
-
-
 function main() {
   const pane = activePane();
 
@@ -88,9 +85,7 @@ function trace(pane, line, budget, row) {
       logPath,
       `${JSON.stringify({
         at: new Date().toISOString(),
-        env: Object.fromEntries(
-          Object.entries(process.env).filter(([key]) => key.startsWith('HERDR_')),
-        ),
+        env: Object.fromEntries(Object.entries(process.env).filter(([key]) => key.startsWith('HERDR_'))),
         agent: pane.agent,
         cwd: pane.cwd,
         row,
