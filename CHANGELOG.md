@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- A mark with no colour of its own is drawn in ink — black on a light panel,
+  white on a dark one — instead of inheriting Herdr's contextual default. That
+  default is the sidebar's second-rank text grey, which left every brand that
+  signs in black looking switched off beside the coloured ones. The sidebar
+  block is rebuilt per appearance, so the two ends of the scale still follow
+  the desktop.
+- The working logo is no longer bold. The icon font ships one weight, so bold
+  is synthesised by dilating the outline: the mark did not thicken, it grew,
+  and a logo that changes size the moment a session stops working reads as a
+  rendering fault. Working is still said three ways beside it — the spinner,
+  the ring, and the title in the vendor's colour.
+- Grok's mark is 15% larger than the shared fit. Two thin strokes running
+  corner to corner fill a bounding box while the ink sits on a diagonal, so
+  fitted like everything else it measures equal and reads a size smaller than
+  the discs beside it.
 - Antigravity and Kiro get their marks. Both SVGs were already in `tools/svg/`
   with nothing pointing at them; they are now glyphs `U+E1B2` and `U+E1B3` in
   the icon font, so the hand-mapped codepoint range in the README moves with

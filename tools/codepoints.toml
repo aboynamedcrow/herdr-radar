@@ -86,7 +86,11 @@ deepseek = 1.64
 gemini = 1.64
 gpt = 1.64
 qwen = 1.64
-grok = 1.64
+# Hand-tuned, against the generated scheme above: the xAI mark is two thin
+# strokes running corner to corner, so its bounding box is full while its ink
+# sits on a diagonal. Fitted to one longest edge like everything else it
+# measures equal and READS a size smaller than the discs beside it. 15% back.
+grok = 1.88
 agy = 1.64
 kiro = 1.35
 amp = 1.64
