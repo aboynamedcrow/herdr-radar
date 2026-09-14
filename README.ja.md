@@ -156,12 +156,12 @@ Spaces 列も同じベンダー色を使うので、どのワークスペース�
 <!-- prettier-ignore -->
 | | | | |
 | --- | --- | --- | --- |
-| Amp | Antigravity | Claude Code | Cline |
-| Codex | Copilot | Cursor | DeepSeek |
-| Devin | Gemini | GPT | Grok |
-| Hermes | Kilo | Kimi | Kiro |
-| Maki | Mastra | OhMyPosh | OpenCode |
-| Pi | Qoder | Qwen | |
+| <img src="assets/marks/amp.svg" width="15" align="top"> Amp | <img src="assets/marks/agy.svg" width="15" align="top"> Antigravity | <img src="assets/marks/claude.svg" width="15" align="top"> Claude Code | <img src="assets/marks/cline.svg" width="15" align="top"> Cline |
+| <img src="assets/marks/codex.svg" width="15" align="top"> Codex | <img src="assets/marks/copilot.svg" width="15" align="top"> Copilot | <img src="assets/marks/cursor.svg" width="15" align="top"> Cursor | <img src="assets/marks/deepseek.svg" width="15" align="top"> DeepSeek |
+| <img src="assets/marks/devin.svg" width="15" align="top"> Devin | <img src="assets/marks/gemini.svg" width="15" align="top"> Gemini | <img src="assets/marks/gpt.svg" width="15" align="top"> GPT | <img src="assets/marks/grok.svg" width="15" align="top"> Grok |
+| <img src="assets/marks/hermes.svg" width="15" align="top"> Hermes | <img src="assets/marks/kilo.svg" width="15" align="top"> Kilo | <img src="assets/marks/kimi.svg" width="15" align="top"> Kimi | <img src="assets/marks/kiro.svg" width="15" align="top"> Kiro |
+| <img src="assets/marks/maki.svg" width="15" align="top"> Maki | <img src="assets/marks/mastracode.svg" width="15" align="top"> Mastra | <img src="assets/marks/omp.svg" width="15" align="top"> OhMyPosh | <img src="assets/marks/opencode.svg" width="15" align="top"> OpenCode |
+| <img src="assets/marks/pi.svg" width="15" align="top"> Pi | <img src="assets/marks/qodercli.svg" width="15" align="top"> Qoder | <img src="assets/marks/qwen.svg" width="15" align="top"> Qwen |  |
 
 Herdr はさらに 2 つ、Droid と Muse を検出しますが、どちらもこのプロジェクトが使える形で
 マークを公開していません。それらの行も他と同じように動作し —— 状態も色も並び順もグループ化も
