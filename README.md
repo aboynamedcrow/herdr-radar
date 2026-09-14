@@ -114,6 +114,65 @@ orders: `active` keeps the groups and ranks by activity at both levels; `recent`
 list by activity — `prefix+a` flips between them. The whole panel can be handed back to
 Herdr's own rendering from the settings popup.
 
+## What the colours mean
+
+Two things are worth knowing about a row at a glance, and they are carried separately: the
+**logo** says whose agent it is, the **title** says what that agent is doing. Neither reading
+depends on the other.
+
+The logo wears the vendor's own colour, and only ever the one the vendor publishes. A brand
+that signs itself in black or white has no hue to borrow, so its mark is simply drawn in ink —
+black on a light panel, white on a dark one — rather than in a colour this project invented for
+it. Nothing about a row's state changes the logo.
+
+The title carries the state, and shape carries it too, so the panel still reads without colour:
+
+| State | Title | In front of it |
+| --- | --- | --- |
+| working | the vendor's colour | a braille spinner, turning |
+| waiting on you | red | a question mark, pulsing |
+| done | green | a tick, held until you focus the pane |
+| idle | the freshness scale, below | a ring |
+| unknown | violet | a ring |
+
+Green and red are semantic and outrank branding: they are there to pull the eye, so no vendor
+colour is allowed to be either. A working title takes its vendor's hue rather than one shared
+"busy" colour because with thirty rows on screen the hue is what separates one running session
+from the next before any of them is read.
+
+**Idle is a gradient, not a state.** Once an agent stops, the only question left is how long
+ago, so the title cools with the time since its last turn: the first 15 minutes read as just
+stopped, then plain text out to two hours, after which the whole row dims — logo, marks and all
+— and sinks to the bottom of its group. Both thresholds are settings
+(`activity_fresh_minutes`, `activity_stale_minutes`). All three tiers draw the same ring, and
+colour alone says which one: a mark that changed shape as it aged would have to be learned
+three times.
+
+The Spaces column takes the same vendor colours, so a workspace running Claude and one running
+Gemini are told apart there too.
+
+## Which agents it knows
+
+Twenty-three vendors have a mark of their own:
+
+<!-- prettier-ignore -->
+| | | | |
+| --- | --- | --- | --- |
+| Amp | Antigravity | Claude Code | Cline |
+| Codex | Copilot | Cursor | DeepSeek |
+| Devin | Gemini | GPT | Grok |
+| Hermes | Kilo | Kimi | Kiro |
+| Maki | Mastra | OhMyPosh | OpenCode |
+| Pi | Qoder | Qwen | |
+
+Herdr detects two more, Droid and Muse, and neither publishes a mark this project can use.
+Those rows behave like any other — state, colour, ordering, grouping — they just wear the
+generic mark instead of one of their own. A pull request adding either is welcome; the marks
+for Antigravity and Kiro arrived that way.
+
+Anything else Herdr recognises is shown the same way: the generic mark, a colour of its own,
+and everything else intact.
+
 ## Settings
 
 `prefix+,` opens the settings popup: `↑↓` select, `←→` change, `↵` edit a text value, `r`
