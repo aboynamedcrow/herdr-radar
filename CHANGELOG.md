@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 — 2026-09-14
 
 - A mark with no colour of its own is drawn in ink — black on a light panel,
   white on a dark one — instead of inheriting Herdr's contextual default. That
@@ -73,6 +73,12 @@
   session from the next before any of them is read. This brings back a copy of
   the agent row per vendor (`rows_by_agent`): a value rule can colour a logo,
   whose value is the vendor's glyph, but not a title, whose value is prose.
+
+Antigravity and Kiro — their marks, their names, their colours, and the
+home-directory and title-fallback fixes that came with them — are
+[#1](https://github.com/hhdebb/herdr-radar/pull/1), by @sizzlebop. It landed
+squashed, so GitHub shows the pull request closed rather than merged; the
+commit carries her authorship.
 
 ## 1.2.1
 
