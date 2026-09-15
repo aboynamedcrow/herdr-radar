@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- **The tab bar no longer polls itself into a pile-up.** The managed block asked
+  Herdr to run the status command every 2 seconds with a 3-second timeout, so a
+  tick that ran long was still running when the next one started. On Windows
+  every tick is a fresh `cmd.exe` — Herdr's own config says so — and the overlap
+  feeds itself: more overlap, slower machine, more timeouts, more overlap. On a
+  24-core machine it ended at Herdr taking 12.5 cores, 35 console hosts, a
+  hundred shells, and a desktop that would not move the mouse. Killing Herdr
+  dropped the machine from saturated to 19%, and starting it brought the whole
+  thing back within seconds.
+
+  The interval is 6 seconds now and the timeout is derived from it, so the two
+  cannot drift apart again; `npm run check` reads both back out of the generated
+  block and fails if the interval is not the larger. The line the poll feeds is
+  the current directory, which did not deserve a process three times a minute in
+  the first place — Herdr's tab bar has no file source, so a command is the only
+  way in, but it can be a quiet one.
+
+  Anyone who installed an earlier version has the old numbers in their
+  `config.toml`; re-running the plugin's configure step rewrites the block.
+
 ## 1.3.0 — 2026-09-14
 
 - A mark with no colour of its own is drawn in ink — black on a light panel,
