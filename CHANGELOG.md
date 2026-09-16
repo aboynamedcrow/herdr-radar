@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.4 — 2026-09-16
+
+- **The Ghostty block no longer replaces your terminal font.** It wrote
+  `font-family = "Herdr Agent Icons Max"` alongside the codepoint maps, and in
+  Ghostty `font-family` is not "also load this" — it is the *primary* font. Ours
+  holds icons and nothing else, so every ordinary character went looking in a
+  font that cannot draw it and the terminal fell back to something you never
+  chose: not the icons, every line of text. The `font-codepoint-map` lines
+  redirect our two ranges whatever the primary font is, which is all this ever
+  needed, so the `font-family` line is gone. `npm run check` now fails if
+  anything we write into a terminal config claims that terminal's primary font.
+
+  If you installed an earlier version, the line is still in your config. Re-run
+  the plugin's install-font action — the managed block is replaced wholesale, so
+  one run clears it. kitty was never affected; its `symbol_map` lines only ever
+  mapped the ranges.
+
+  Reported in [#4](https://github.com/hhdebb/herdr-radar/issues/4) by
+  @adamflitney.
+
 ## 1.3.3 — 2026-09-16
 
 - The README banner is rebuilt. Both screenshots are now the ground rather than
