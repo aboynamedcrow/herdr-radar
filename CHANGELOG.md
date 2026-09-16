@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.1 — 2026-09-16
 
 - **The tab bar no longer polls itself into a pile-up.** The managed block asked
   Herdr to run the status command every 2 seconds with a 3-second timeout, so a
@@ -21,6 +21,14 @@
 
   Anyone who installed an earlier version has the old numbers in their
   `config.toml`; re-running the plugin's configure step rewrites the block.
+
+- The OSC7 hook no longer spends a process turning `/c/code/x` into `C:/code/x`.
+  It runs before every prompt, and on Windows a subprocess is not free: measured
+  on one machine, that single `cygpath` call cost about 150ms of kernel time per
+  prompt. Parameter expansion gives the same answer — checked against `cygpath
+  -m` on a deep path, on a bare drive root, and on another drive — and paths
+  that are not Windows drives fall through untouched, which is what Linux and
+  macOS need anyway. Both the bash and the zsh copies.
 
 ## 1.3.0 — 2026-09-14
 
