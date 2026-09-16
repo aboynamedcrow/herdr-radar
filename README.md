@@ -36,7 +36,7 @@ sessions of one project sit under one header, and the busiest project sits on to
 
 ## What you get
 
-<img src="assets/sidebar.webp" alt="herdr-radar sidebar: groups, state marks, activity order" width="100%">
+<img src="assets/sidebar.webp" alt="herdr-radar sidebar on a light and a dark desktop: groups, state marks, activity order" width="100%">
 
 - **State does not slip away.** The tick stays until you focus the pane, the question mark
   stays until the agent works again, idle splits into three tiers by time since the last

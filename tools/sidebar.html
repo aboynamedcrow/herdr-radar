@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  Source for assets/sidebar.webp - the "What you get" figure in the READMEs.
+  Render at 1160x820 and save as assets/sidebar.webp.
+
+  It was a single portrait capture, 1887x3355. At the width="100%" the READMEs
+  use, that renders about 830x1475 on GitHub - taller than the section it
+  illustrates, and it only ever showed the dark theme. Two cropped excerpts side
+  by side fit in a third of the height and show both appearances at once, which
+  is the thing the section is actually claiming.
+
+  Captures are portrait 2160x3840; each card shows source x 0-600 (the panel),
+  at 0.7667 so the rows stay legible at README width, each offset so both open
+  on the same group.
+-->
+<style>
+  html, body { margin: 0; width: 1160px; height: 820px; overflow: hidden; background: #0d0d10; }
+  body { font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif; position: relative; }
+
+  figure { position: absolute; top: 80px; width: 460px; margin: 0; }
+  .light { left: 80px; }
+  .dark { left: 620px; }
+
+  /* The card is what makes this read as a figure rather than a pasted
+     screenshot: a deliberate edge, the same one on both sides. */
+  .card {
+    position: relative; width: 460px; height: 700px; overflow: hidden; border-radius: 12px;
+    box-shadow: 0 18px 44px rgba(0,0,0,0.55), 0 0 0 1px rgba(233,233,240,0.12);
+  }
+  .card img { position: absolute; width: 1656px; left: 0; }
+  /* The two captures were taken at different moments, so the same rows sit at
+     different heights in each. Offsetting them separately lines the content up:
+     both cards open on edge-router. Unaligned, a side-by-side reads as two
+     different panels rather than one panel under two themes. Both also start
+     below the window chrome, and far enough below it that edge-router is the
+     first row rather than the second half of the one above it. */
+  .dark .card img { top: -803px; }
+  .light .card img { top: -1242px; }
+  /* Soften the bottom so the excerpt ends rather than being cut off mid-row. */
+  .card::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, transparent 90%, rgba(13,13,16,0.9) 100%);
+  }
+
+  figcaption {
+    margin: 0 0 14px 2px; font-size: 15px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #7e7a72;
+  }
+  figcaption::before {
+    content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    margin-right: 11px; vertical-align: 1px;
+  }
+  .light figcaption::before { background: #e9e9f0; }
+  .dark figcaption::before { background: #3a3a44; box-shadow: 0 0 0 1px rgba(233,233,240,0.35); }
+</style>
+</head>
+<body>
+  <figure class="light">
+    <figcaption>light desktop</figcaption>
+    <div class="card"><img src="file:///C:/Users/root/Downloads/Snipaste_2026-09-16_17-49-54.png"></div>
+  </figure>
+  <figure class="dark">
+    <figcaption>dark desktop</figcaption>
+    <div class="card"><img src="file:///C:/Users/root/Downloads/Snipaste_2026-09-16_17-52-13.png"></div>
+  </figure>
+</body>
+</html>

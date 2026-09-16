@@ -33,7 +33,7 @@ herdr-radar 把这些信息搬到侧边栏上：完工的勾一直亮到你看�
 
 ## 你会得到什么
 
-<img src="assets/sidebar.webp" alt="herdr-radar 侧边栏：分组、状态标记、按活跃度排序" width="100%">
+<img src="assets/sidebar.webp" alt="herdr-radar 侧边栏在亮色与暗色桌面下：分组、状态标记、按活跃度排序" width="100%">
 
 - **状态不会溜走。** 完工的勾保持到你聚焦那个面板，问号保持到 agent 重新干活，
   idle 按最后一轮距今多久分三档，放弃的会话整行变暗。
