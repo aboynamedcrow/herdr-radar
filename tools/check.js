@@ -36,6 +36,23 @@ if (!timings) {
   );
 }
 
+// Nothing we write into a terminal's config may set that terminal's primary
+// font. Our font holds icons and nothing else, so claiming the primary slot
+// sends every ordinary character to a font that cannot draw it and the terminal
+// falls back to something the user never picked. Ghostty's `font-family` and
+// kitty's `font_family` both do exactly that; only the per-codepoint
+// redirections belong in the block. Reported in #4.
+const claimsPrimaryFont = /^\s*(font-family|font_family)[\s=]/;
+for (const terminal of require('../lib/font').TERMINALS) {
+  const line = terminal.lines.find((text) => claimsPrimaryFont.test(text));
+  if (line) {
+    problems.push(
+      `${terminal.name} block: sets the terminal's primary font (${line.trim()}); ` +
+        'map our codepoints instead, our font has only icons',
+    );
+  }
+}
+
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exit(1);
