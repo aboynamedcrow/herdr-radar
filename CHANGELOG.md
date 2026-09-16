@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.3 — 2026-09-16
+
+- The README banner is rebuilt. Both screenshots are now the ground rather than
+  objects sitting on it: faded down and masked at the edges, so no rectangle
+  survives to read as a screenshot pasted onto the page. Light on the left, dark
+  on the right, which is the theme story without a caption. All 23 vendor marks
+  orbit the wordmark on three rings.
+
+- The sidebar figure is both themes instead of one. It was a single portrait
+  capture of the dark theme, about 830x1475 at the width the READMEs use —
+  taller than the section it illustrates. Now the light capture is the base and
+  the dark one is stacked on it, offset so it covers part of the light pane and
+  leaves a strip of it showing; tops and heights match, so the same rows sit at
+  the same height in both and can be read across.
+
+- Every vendor mark is listed under that figure. The captures are one demo
+  scene, and a scene has only as many panes as it has: that one came up a pane
+  short of the roster, so `gpt` never got a row. The strip states the claim
+  directly, from `assets/marks/`, so it stays right when a vendor is added.
+
 ## 1.3.2 — 2026-09-16
 
 - A mirrored pane shows the remote's task title instead of a blank row. A
