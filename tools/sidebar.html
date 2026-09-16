@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <!--
   Source for assets/sidebar.webp - the "What you get" figure in the READMEs.
-  Render at 1560x1900 and save as assets/sidebar.webp.
+  Render at 1720x1900 and save as assets/sidebar.webp.
 
   It used to be a single portrait capture, and it only ever showed the dark
   theme. Here the light capture is the base and the dark one is stacked on top
@@ -17,7 +17,7 @@
   the two panels come out the same size and can be compared row for row.
 -->
 <style>
-  html, body { margin: 0; width: 1560px; height: 1900px; overflow: hidden; background: #0d0d10; }
+  html, body { margin: 0; width: 1720px; height: 1900px; overflow: hidden; background: #0d0d10; }
   body { font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif; position: relative; }
 
   .shot { position: absolute; overflow: hidden; border-radius: 14px; }
@@ -30,13 +30,14 @@
   }
   .base img { top: -591px; }
 
-  /* Overlay: the dark desktop, offset horizontally only - it starts just right
-     of the base's panel, so it covers the code and leaves both panels readable.
+  /* Overlay: the dark desktop, offset horizontally only, and far enough right
+     that a strip of the base's code survives beside its panel - butted up
+     against the panel the light half proved nothing but the panel itself.
      Tops and heights match the base, which puts the same rows at the same
      height in both and lets them be read across. The offset is what stacks
      them; the heavier shadow is what says which one is on top. */
   .over {
-    left: 460px; top: 60px; width: 1040px; height: 1780px;
+    left: 700px; top: 60px; width: 960px; height: 1780px;
     box-shadow: 0 40px 90px rgba(0,0,0,0.75), 0 0 0 1px rgba(233,233,240,0.16);
   }
   .over img { top: -590px; }
@@ -58,7 +59,7 @@
   }
   .label-light { left: 62px; top: 16px; }
   .label-light::before { background: #e9e9f0; }
-  .label-dark { left: 462px; top: 16px; }
+  .label-dark { left: 702px; top: 16px; }
   .label-dark::before { background: #3a3a44; box-shadow: 0 0 0 1px rgba(233,233,240,0.4); }
 </style>
 </head>
