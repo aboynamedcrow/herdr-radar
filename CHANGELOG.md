@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.2 — 2026-09-16
 
 - A mirrored pane shows the remote's task title instead of a blank row. A
   mirror streamer runs no program of its own, so it has no terminal title at
