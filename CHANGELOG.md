@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- A mirrored pane shows the remote's task title instead of a blank row. A
+  mirror streamer runs no program of its own, so it has no terminal title at
+  all — the title arrives in the `title` metadata slot, which the sidebar now
+  reads when the terminal title says nothing. From
+  [#2](https://github.com/hhdebb/herdr-radar/pull/2), by @larkinwc.
+
 ## 1.3.1 — 2026-09-16
 
 - **The tab bar no longer polls itself into a pile-up.** The managed block asked
