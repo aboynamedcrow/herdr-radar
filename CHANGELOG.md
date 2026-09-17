@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.3.5 — 2026-09-17
+
+- **The stale tier no longer fades itself out of existence.** Five cells asked
+  for the terminal's `dim` on top of an already-faded ink, and `dim` is a
+  switch rather than a value: it says "draw this faintly" and every terminal
+  answers differently — a third of the way to the background in one, half in
+  another, nothing in a third. An ink faint enough to survive the deepest of
+  those answers is too faint to read before any of them.
+
+  The dark stale ink was `#585a64`, which is 2.6:1 on a dark panel and caps at
+  3.06:1 against *any* background, so it was under the floor before a terminal
+  touched it. Rendered it measured 1.8:1 on one machine and 1.5:1 on another:
+  the row was present and drawn, and could not be read.
+
+  `dim` is gone from those cells and the fade is in the palette, where it can
+  be measured. The dark second-rank inks move up, `idle` and `subtle` split per
+  appearance — one value cannot be second-rank on a light panel and clear a
+  floor on a dark one — and the light stale ink moves too, at 2.2:1 it was
+  under the floor even with `dim` gone.
+
+  `npm run check` now scores every text ink in the sidebar block against a
+  reference panel per appearance and rejects `dim` outright. Vendor marks are
+  exempt: a logo is a shape, and the floor is about text that cannot be read.
+
+  Reported in [#5](https://github.com/hhdebb/herdr-radar/issues/5) by
+  @rakesh-investmates, with measurements and a patch.
+
 ## 1.3.4 — 2026-09-16
 
 - **The Ghostty block no longer replaces your terminal font.** It wrote
