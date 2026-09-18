@@ -8,7 +8,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "check": "node tools/check.js && node --test tools/details.test.js tools/groups.test.js",
+    "check": "node tools/check.js && node --test tools/*.test.js",
     "format": "prettier --check .",
     "format:fix": "prettier --write ."
   },
