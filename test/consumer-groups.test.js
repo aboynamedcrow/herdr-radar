@@ -79,3 +79,46 @@ test('a worktree with no parent agent retains its repository header', async () =
   assert.equal(rows.get('task').group_parent, 'dot');
   assert.match(rows.get('task').group, /^└─ .*Sidebar task$/);
 });
+
+test('a parent after its child does not repeat the shared family header', async () => {
+  const rows = await rowsFor(['task', 'dot', 'other'], { parentOf: new Map([['task', 'dot']]) });
+  assert.equal(rows.get('task').group_parent, 'dot');
+  assert.match(rows.get('task').group, /└─ /);
+  assert.equal(rows.get('dot').group, null);
+});
+
+test('native ordering gives every agent its own project and workspace context', async () => {
+  const saved = herdr.reportMetadataAsync;
+  const rows = new Map();
+  herdr.reportMetadataAsync = async (pane, source, tokens) => {
+    rows.set(pane, tokens);
+    return true;
+  };
+  try {
+    const entries = [
+      { pane: 'task:p1', workspace: 'task' },
+      { pane: 'other:p1', workspace: 'other' },
+      { pane: 'task:p2', workspace: 'task' },
+    ];
+    await state.writeEntryHeaders(
+      'test',
+      entries,
+      new Map([
+        ['dot', 'dot'],
+        ['task', 'Sidebar'],
+        ['other', 'gtm'],
+      ]),
+      new Set(),
+      { parentOf: new Map([['task', 'dot']]) },
+    );
+    assert.equal(rows.get('task:p1').group, 'dot › Sidebar');
+    assert.equal(rows.get('task:p2').group, 'dot › Sidebar');
+    assert.equal(rows.get('other:p1').group, 'gtm');
+    for (const row of rows.values()) {
+      assert.equal(row.group_parent, null);
+      assert.equal(row.gap, null);
+    }
+  } finally {
+    herdr.reportMetadataAsync = saved;
+  }
+});

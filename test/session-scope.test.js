@@ -66,16 +66,16 @@ test('the default session keeps the state directory itself', () => {
   assert.equal(plain.runtimeRoot, plain.stateRoot);
 });
 
-test('a named session gets its own directory, the default keeps stateRoot', () => {
+test('a named session keeps its socket-scoped stateRoot', () => {
   const named = pathsWith('/home/u/.config/herdr/sessions/clients/herdr.sock');
   const fallback = pathsWith(undefined);
-  assert.notEqual(named.runtimeRoot, named.stateRoot);
+  assert.equal(named.runtimeRoot, named.stateRoot);
   assert.notEqual(named.runtimeRoot, fallback.runtimeRoot);
 });
 
-test('the runtime directory sits inside the state directory', () => {
+test('the runtime directory keeps the old fork state path', () => {
   // The caches stay in stateRoot on purpose: they are session-agnostic, and
   // the tab-bar line picks its own per-session file (tabbar-session.test.js).
   const paths = pathsWith('/home/u/.config/herdr/sessions/clients/herdr.sock');
-  assert.equal(path.dirname(paths.runtimeRoot), paths.stateRoot);
+  assert.equal(paths.runtimeRoot, paths.stateRoot);
 });

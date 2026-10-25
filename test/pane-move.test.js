@@ -164,7 +164,6 @@ test('frames across a move write to the new id and keep its memory', async (t) =
   const sent = record(t);
   t.mock.method(activity, 'recover', () => null);
   t.mock.method(view, 'mode', () => null);
-  t.mock.method(herdr, 'panelGrouped', () => false);
   let agents = [];
   t.mock.method(herdr, 'agentsAsync', async () => agents);
   t.mock.method(herdr, 'tabsAsync', async () => [
