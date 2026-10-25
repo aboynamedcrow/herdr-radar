@@ -87,3 +87,34 @@ test('default_view off preserves native sorting on a new endpoint', () => {
     fs.rmSync(temp, { recursive: true, force: true });
   }
 });
+
+test('default and agents sockets keep the old fork lock, stop, control and activity paths', () => {
+  const { createHash } = require('node:crypto');
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-upgrade-'));
+  try {
+    for (const socket of ['herdr.sock', 'sessions/agents/herdr.sock']) {
+      const env = { HERDR_PLUGIN_STATE_DIR: path.join(temp, 'state'), HERDR_SOCKET_PATH: path.join(temp, socket) };
+      const hash = createHash('sha256')
+        .update(path.join(fs.realpathSync(temp), socket))
+        .digest('hex')
+        .slice(0, 20);
+      const oldRoot = path.join(temp, 'state', 's', hash);
+      const current = paths(env);
+      assert.equal(current.state, oldRoot);
+      assert.equal(current.runtime, oldRoot);
+      assert.equal(current.pid, path.join(oldRoot, 'animator.pid'));
+      assert.equal(current.stop, path.join(oldRoot, 'animator.stop'));
+      // A short state override makes the old local control path observable.
+      const short = paths({ ...env, HERDR_RADAR_STATE: temp });
+      if (process.platform !== 'win32') assert.equal(short.control, path.join(temp, 'control.sock'));
+      execFileSync(
+        process.execPath,
+        ['-e', "require('./lib/activity').save(new Map([['w1:p1', 123]]), 123, {force:true})"],
+        { cwd: root, env: { ...process.env, ...env, HERDR_RADAR_STATE: oldRoot } },
+      );
+      assert.deepEqual(JSON.parse(fs.readFileSync(path.join(oldRoot, 'activity.json'), 'utf8')), { 'w1:p1': 123 });
+    }
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
