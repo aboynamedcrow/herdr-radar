@@ -1,8 +1,18 @@
 #!/usr/bin/env node
 'use strict';
 
-// `npm run check`: the declaration files agree with lib/identity.js, and every
-// script parses. No test runner needed for a zero-dependency plugin.
+// `npm run check`: invariants — the things in this repository that have to
+// agree with each other and drifted apart once. The declaration files and
+// lib/identity.js, the vendor roster across six places, the ranges the READMEs
+// print and the ranges the installer maps, every script parsing. Each is read
+// straight off the source, synchronously, and needs nothing set up.
+//
+// Behaviour belongs in test/ instead (`npm test`, Node's built-in runner, so
+// still no dependency): anything that has to replace a module's function, run
+// async, or leave a process in a known state afterwards. It lived here for a
+// while and the file grew a promise chain to end on; that is the sign.
+//
+// Both are proved able to fail by tools/prove-checks.js.
 
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
@@ -49,6 +59,21 @@ for (const terminal of require('../lib/font').TERMINALS) {
     problems.push(
       `${terminal.name} block: sets the terminal's primary font (${line.trim()}); ` +
         'map our codepoints instead, our font has only icons',
+    );
+  }
+}
+
+// Nor may it quote the family name: terminals read the name literally, so the quotes become part of it,
+// nothing matches, and the codepoints fall through to whatever else claims the range (in the PUA, a CJK font).
+const family = require('../lib/font').FONT_FAMILY;
+// Whitespace inside the quotes is still a quoted name, just a worse one.
+const quotesFamily = new RegExp(`["']\\s*${family.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*["']`);
+for (const terminal of require('../lib/font').TERMINALS) {
+  const line = terminal.lines.find((text) => quotesFamily.test(text));
+  if (line) {
+    problems.push(
+      `${terminal.name} block: quotes the font family (${line.trim()}); ` +
+        'the quotes become part of the name the terminal looks for',
     );
   }
 }
@@ -110,6 +135,433 @@ for (const [variant, panel] of Object.entries(PANELS)) {
           `under the ${CONTRAST_FLOOR}:1 floor`,
       );
     }
+  }
+}
+
+// Every glyph the font defines has to fall inside a range the installer maps.
+//
+// The terminal only looks in our font for the codepoints we tell it about, so a
+// glyph outside those ranges is drawn from whatever the terminal had — which is
+// nothing, silently, while install-font reports success. Adding the 24th vendor
+// at E1B7 did exactly that: one past the end of a range written down by hand.
+// Read the codepoints back out of the source of truth rather than trusting two
+// places to agree.
+const codepointsToml = fs.readFileSync(path.join(root, 'tools', 'codepoints.toml'), 'utf8');
+const glyphSection = codepointsToml.split(/^\[fit\]/m)[0];
+const declared = [...glyphSection.matchAll(/^([a-z_][a-z0-9_]*)\s*=\s*"([0-9A-Fa-f]{4})"/gm)].map(([, name, hex]) => ({
+  name,
+  point: parseInt(hex, 16),
+}));
+if (declared.length === 0) {
+  problems.push('codepoints.toml: no glyph assignments found — did the file move?');
+}
+const { RANGES } = require('../lib/font');
+const mapped = RANGES.map(([lo, hi]) => [parseInt(lo, 16), parseInt(hi, 16)]);
+for (const { name, point } of declared) {
+  if (!mapped.some(([lo, hi]) => point >= lo && point <= hi)) {
+    problems.push(
+      `codepoints.toml: ${name} at U+${point.toString(16).toUpperCase()} is outside every ` +
+        'range install-font maps, so the terminal will never look for it',
+    );
+  }
+}
+
+// Adding a vendor means touching six places, and missing one is silent.
+//
+// A vendor needs a codepoint, a glyph, a mark to build it from, a PUA entry, a
+// text fallback, a display name, and a line in the third-party notices. Nothing
+// held those together, and three of them drifted: `amp`, `devin` and `qodercli`
+// went five releases with their marks drawn and their sources uncredited, which
+// is the one kind of drift here that is not merely cosmetic. The display name
+// for `omp` said OhMyPosh — a prompt theme engine — while the notices had
+// credited oh-my-pi correctly all along (#12).
+//
+// The notices are the only place a human must write prose, so this cannot check
+// that the words are right; it checks that no vendor is missing from any of the
+// lists, which is what went wrong each time.
+const logos = require('../lib/logos');
+const notices = fs.readFileSync(path.join(root, 'THIRD_PARTY_NOTICES.md'), 'utf8');
+const vendorKeys = {
+  'logos.js PUA': Object.keys(logos.PUA),
+  'logos.js TEXT': Object.keys(logos.TEXT),
+  'logos.js DISPLAY': Object.keys(logos.DISPLAY),
+  // `declared` is already every key assigned a codepoint, which leaves out the
+  // file's `family` and `version` lines. The state glyphs share the file but
+  // are not vendors.
+  'codepoints.toml': declared.map(({ name }) => name).filter((name) => !name.startsWith('state_')),
+  'assets/marks': fs
+    .readdirSync(path.join(root, 'assets', 'marks'))
+    .filter((f) => f.endsWith('.svg'))
+    .map((f) => f.slice(0, -'.svg'.length)),
+  // Padding around the cell is legal Markdown and would otherwise read as a
+  // missing vendor — a false alarm on a row that is perfectly correct.
+  'THIRD_PARTY_NOTICES.md': [...notices.matchAll(/^\|\s*([a-z][a-z0-9_]*)\s*\|/gm)].map(([, key]) => key),
+};
+const everyVendor = new Set(Object.values(vendorKeys).flat());
+for (const [where, keys] of Object.entries(vendorKeys)) {
+  const held = new Set(keys);
+  for (const vendor of everyVendor) {
+    if (!held.has(vendor)) problems.push(`${where}: no entry for '${vendor}', which every other list has`);
+  }
+}
+// tools/svg/ is allowed the state glyphs on top of the vendors, so it is
+// checked one way only: a mark with nothing pointing at it is dead weight, but
+// a vendor with no mark cannot be built at all.
+const sources = fs
+  .readdirSync(path.join(root, 'tools', 'svg'))
+  .filter((f) => f.endsWith('.svg'))
+  .map((f) => f.slice(0, -'.svg'.length));
+for (const vendor of everyVendor) {
+  if (!sources.includes(vendor)) problems.push(`tools/svg: no ${vendor}.svg to build that vendor's glyph from`);
+}
+// Counts written out in prose go stale the moment a vendor is added, and three
+// of them had: the notices claimed 29 glyphs against 30, and all three READMEs
+// still said twenty-three vendors after the 24th landed. Each is spelled for
+// its own language, so the pattern is per file rather than one shared regex.
+const vendorCount = Object.keys(logos.PUA).length;
+const counted = [
+  ['THIRD_PARTY_NOTICES.md', notices, /(\d+) icon glyphs/, declared.length, 'glyphs the font is built from'],
+  ['README.md', null, /(Twenty-\w+) vendors have a mark/, vendorCount, 'vendors with a mark'],
+  [
+    'README.zh-CN.md',
+    null,
+    /([\u4e00-\u9fff]+)\u5bb6\u6709\u81ea\u5df1\u7684\u6807\u8bb0/,
+    vendorCount,
+    'vendors with a mark',
+  ],
+  [
+    'README.ja.md',
+    null,
+    /(\d+) \u306e\u30d9\u30f3\u30c0\u30fc\u304c\u72ec\u81ea\u306e\u30de\u30fc\u30af/,
+    vendorCount,
+    'vendors with a mark',
+  ],
+];
+// Spelled-out numerals, only as far as this project can plausibly grow.
+const WORDS = [
+  'Twenty-one',
+  'Twenty-two',
+  'Twenty-three',
+  'Twenty-four',
+  'Twenty-five',
+  'Twenty-six',
+  'Twenty-seven',
+  'Twenty-eight',
+  'Twenty-nine',
+  'Thirty',
+];
+const CJK = [
+  '\u4e8c\u5341\u4e00',
+  '\u4e8c\u5341\u4e8c',
+  '\u4e8c\u5341\u4e09',
+  '\u4e8c\u5341\u56db',
+  '\u4e8c\u5341\u4e94',
+  '\u4e8c\u5341\u516d',
+  '\u4e8c\u5341\u4e03',
+  '\u4e8c\u5341\u516b',
+  '\u4e8c\u5341\u4e5d',
+  '\u4e09\u5341',
+];
+const asNumber = (text) => {
+  if (/^\d+$/.test(text)) return Number(text);
+  const word = WORDS.indexOf(text);
+  if (word !== -1) return 21 + word;
+  const cjk = CJK.indexOf(text);
+  return cjk === -1 ? NaN : 21 + cjk;
+};
+for (const [file, preloaded, pattern, want, what] of counted) {
+  const text = preloaded ?? fs.readFileSync(path.join(root, file), 'utf8');
+  const found = pattern.exec(text);
+  if (!found) {
+    problems.push(`${file}: no longer states how many ${what} there are, or says it differently`);
+  } else if (asNumber(found[1]) !== want) {
+    problems.push(`${file}: says ${found[1]} where there are ${want} ${what}`);
+  }
+}
+
+// Every display a pane can carry has to reach the Spaces column, and has to
+// land on a token that exists.
+//
+// Two lists and a mapping have to agree: STATES is what a pane's display can
+// be, SPACE_PRIORITY is which of them a workspace's single mark speaks for, and
+// spaceToken() names the cell it publishes under. When idle was split into
+// three tiers only the first list was updated, so a workspace of fresh or stale
+// agents matched nothing and drew the no-agent dot (#11). The second failure is
+// quieter still: writeSpaceState nulls every token it does not match, so a name
+// outside SPACE_TOKENS does not mis-draw one cell, it clears every state mark on
+// the row at once. (The logos and the label survive it — they are written after,
+// from a separate object — so the row goes nameless rather than vanishing.)
+const state = require('../lib/state');
+const spaceTokens = new Set(state.SPACE_TOKENS);
+for (const display of state.STATES) {
+  if (!state.SPACE_PRIORITY.includes(display)) {
+    problems.push(`SPACE_PRIORITY: no entry for '${display}', so a workspace holding only those agents reads as empty`);
+  }
+  // Vendor only matters for `working`; an unbranded one must still land.
+  for (const vendor of [...palette.brandVendors, 'nosuchvendor']) {
+    const token = state.spaceToken(display, vendor);
+    if (!spaceTokens.has(token)) {
+      problems.push(
+        `spaceToken('${display}', '${vendor}') is '${token}', which is not in SPACE_TOKENS — ` +
+          'it clears every state mark on the row',
+      );
+    }
+  }
+}
+for (const display of state.SPACE_PRIORITY) {
+  if (!state.STATES.includes(display)) {
+    problems.push(`SPACE_PRIORITY: '${display}' is not a display any pane can carry`);
+  }
+}
+// A token with no cell in the sidebar block is a mark that never draws.
+//
+// Matched with the closing quote the generated cell carries, not as a bare
+// substring: `$space_idle` occurs inside `$space_idle_fresh`, so a cell renamed
+// to something that merely starts with the published name would have satisfied
+// a substring test while the name actually published had no cell left.
+for (const variant of ['light', 'dark']) {
+  const block = managed.sidebarBlock(variant);
+  for (const token of state.SPACE_TOKENS) {
+    if (!block.includes(`token = "$${token}"`)) {
+      problems.push(`sidebar block (${variant}): no cell for $${token}, so that mark never draws`);
+    }
+  }
+}
+
+// A vendor this plugin can name never goes nameless.
+//
+// The row is `logo · title`. When the title says nothing the vendor's name
+// takes its place, and the one case that was missed is the one that happens
+// most: a pane with no title at all. `locationOnly()` answers false for an
+// empty string — it is asking "is this title only a location", and an absent
+// title is not — so the fallback never ran and Antigravity and codex rows drew
+// a logo with nothing beside it (#10). The same hole swallowed a title that was
+// nothing but the attention bracket, which strips to empty here.
+//
+// Stated as the property the row actually needs, and run against the real pair
+// of functions, since copying the stripping regex into this file would only
+// move the drift somewhere else.
+const { DISPLAY } = logos;
+const CWD = '/home/u/src/notes';
+const blank = (value) => typeof value !== 'string' || value.trim() === '';
+// Titles that say nothing about which agent this is. The last two arrive
+// non-empty and are emptied by the strip, which is why it runs for real.
+const SAYS_NOTHING = ['', '   ', '\t\r\n ', CWD, '  ' + CWD + '  ', 'notes', CWD + ': agy', '[!]', '[ · ] '];
+// Not reachable from the call site, which only ever passes a string, but the
+// function is exported now and a caller that hands it nothing should still get
+// a name rather than a crash or a blank.
+const NOT_A_STRING = [null, undefined, 0, {}];
+for (const [agent, display] of Object.entries(DISPLAY)) {
+  if (!display) continue;
+  for (const raw of SAYS_NOTHING) {
+    const resolved = state.vendorTitle(agent, state.stripVendorPulse(raw), CWD);
+    if (resolved !== display) {
+      problems.push(
+        `vendorTitle(${JSON.stringify(agent)}, ${JSON.stringify(raw)}) is ${JSON.stringify(resolved)}, ` +
+          `not ${JSON.stringify(display)} — that row draws a logo with no name beside it`,
+      );
+    }
+  }
+  for (const raw of NOT_A_STRING) {
+    if (blank(state.vendorTitle(agent, raw, CWD))) {
+      problems.push(`vendorTitle(${JSON.stringify(agent)}, ${String(raw)}) is blank; it should still name the vendor`);
+    }
+  }
+}
+// And the other half: a title that does say something keeps its words. Without
+// this, "always return the vendor name" would satisfy everything above.
+for (const [raw, want] of [
+  ['Fixing the parser', 'Fixing the parser'],
+  ['  Fixing the parser  ', 'Fixing the parser'],
+  ['Fixing  the  parser', 'Fixing  the  parser'],
+  ['[!] Fixing the parser', 'Fixing the parser'],
+  ['notes: a real title', 'notes: a real title'],
+]) {
+  const resolved = state.vendorTitle('claude', state.stripVendorPulse(raw), CWD);
+  if (resolved !== want) {
+    problems.push(
+      `vendorTitle('claude', ${JSON.stringify(raw)}) is ${JSON.stringify(resolved)}, not ${JSON.stringify(want)}`,
+    );
+  }
+}
+// An agent with no name of its own has nothing to fall back to, and an empty
+// string is the right answer: stateTokens turns it into a null token, which
+// clears the cell, where a blank string would leave one drawn and empty.
+if (state.vendorTitle('nosuchvendor', '', CWD) !== '') {
+  problems.push('vendorTitle: an unnamed vendor with no title should resolve to the empty string');
+}
+
+// The ranges the READMEs print have to be the ranges the installer maps.
+//
+// A user on a terminal we do not write config for reads them and maps by hand,
+// so a stale range there is a silently half-drawn sidebar for exactly the people
+// who cannot check it against anything. All three said E1A0-E1B3 long after the
+// 24th vendor moved the end to E1B7, and the Chinese one had drifted to E1D1 on
+// the second range as well. Derived, because prose does not get recompiled.
+const documented = RANGES.map(([lo, hi]) => `U+${lo}\u2013U+${hi}`);
+for (const name of ['README.md', 'README.zh-CN.md', 'README.ja.md']) {
+  const prose = fs.readFileSync(path.join(root, name), 'utf8');
+  // A hyphen is the same range typed on a keyboard without an en dash, and
+  // lower-case hex is the same range too. The lookahead stops a fifth digit
+  // from being read as a correct four-digit range with a stray character.
+  const printed = [...prose.matchAll(/U\+[0-9A-F]{4}[\u2013-]U\+[0-9A-F]{4}(?![0-9A-F])/gi)].map(([text]) =>
+    text.toUpperCase().replace('-', '\u2013'),
+  );
+  for (const range of printed) {
+    if (!documented.includes(range)) {
+      problems.push(
+        `${name}: documents ${range}, which install-font does not map (it maps ${documented.join(' and ')})`,
+      );
+    }
+  }
+  for (const range of documented) {
+    if (!printed.includes(range)) {
+      problems.push(`${name}: never tells a user to map ${range}`);
+    }
+  }
+}
+
+// Reordering workspaces has to settle. The module moves them, Herdr emits
+// workspace.reordered, the frame wakes and asks again — so if feeding the
+// result back in ever produces a different list, that is not a wrong order,
+// it is an infinite write loop over IPC. Idempotence is the whole safety
+// argument for the feature, so it is checked rather than assumed.
+//
+// Randomised because the interesting cases are interactions: families whose
+// members start apart, a parent with no key of its own, ties, and parent links
+// that happen to form a cycle.
+const { desiredOrder } = require('../lib/workspace-order');
+const ids = ['w1', 'w2', 'w3', 'w4', 'w5', 'w6'];
+let unstable = null;
+for (let i = 0; i < 200 && !unstable; i += 1) {
+  const order = [...ids].sort(() => Math.random() - 0.5);
+  const keys = new Map();
+  const parents = new Map();
+  for (const id of ids) {
+    if (Math.random() < 0.7) keys.set(id, String(Math.floor(Math.random() * 4)).padStart(3, '0'));
+    if (Math.random() < 0.25) {
+      const parent = ids[Math.floor(Math.random() * ids.length)];
+      if (parent !== id) parents.set(id, parent);
+    }
+  }
+  try {
+    const once = desiredOrder(order, keys, parents);
+    const twice = desiredOrder(once, keys, parents);
+    if (once.join() !== twice.join()) {
+      unstable = `once=${once.join(',')} twice=${twice.join(',')}`;
+    } else if ([...once].sort().join() !== [...order].sort().join()) {
+      unstable = `membership changed: in=${order.join(',')} out=${once.join(',')}`;
+    }
+  } catch (error) {
+    unstable = `threw: ${error.message}`;
+  }
+  if (unstable) {
+    unstable += `\n  order=${order.join(',')} keys=${JSON.stringify([...keys])} parents=${JSON.stringify([...parents])}`;
+  }
+}
+if (unstable) {
+  problems.push(`workspace order: desiredOrder is not idempotent — ${unstable}`);
+}
+
+// The worktree tree: a linked worktree hangs under the repo's main checkout,
+// and a second workspace on that same main checkout stays a peer.
+{
+  const { worktreeParents } = require('../lib/state');
+  const repo = (linked) => ({ repo_key: '/r/.git', repo_name: 'r', is_linked_worktree: linked });
+  const { parents } = worktreeParents([
+    { workspace_id: 'main1', worktree: repo(false) },
+    { workspace_id: 'main2', worktree: repo(false) },
+    { workspace_id: 'branch', worktree: repo(true) },
+  ]);
+  if (parents.get('branch') !== 'main1') {
+    problems.push(`worktreeParents: the linked worktree hangs under ${parents.get('branch')}, expected main1`);
+  }
+  if (parents.has('main2')) {
+    problems.push(`worktreeParents: a second main checkout hangs under ${parents.get('main2')}`);
+  }
+}
+
+// row_label: each mode names the row as documented, and a tab-only row keeps
+// its title when the tab is unnamed or carries only Herdr's number.
+{
+  const { rowText } = require('../lib/state');
+  const cases = [
+    ['title', 'architect', { tabLabel: '', title: 'Architect::QA' }],
+    ['tab', 'architect', { tabLabel: '', title: 'architect' }],
+    ['both', 'architect', { tabLabel: 'architect', title: 'Architect::QA' }],
+    ['tab', '', { tabLabel: '', title: 'Architect::QA' }],
+    ['tab', '1', { tabLabel: '', title: 'Architect::QA' }],
+    // A name that is only whitespace, or a number wrapped in it, is no name.
+    ['tab', '   ', { tabLabel: '', title: 'Architect::QA' }],
+    ['tab', ' 12 ', { tabLabel: '', title: 'Architect::QA' }],
+    ['tab', ' qa ', { tabLabel: '', title: 'qa' }],
+  ];
+  for (const [mode, tab, expected] of cases) {
+    const got = rowText(mode, tab, 'Architect::QA');
+    if (JSON.stringify(got) !== JSON.stringify(expected)) {
+      problems.push(`rowText(${mode}, "${tab}"): ${JSON.stringify(got)}, expected ${JSON.stringify(expected)}`);
+    }
+  }
+}
+
+// row_label is read from the settings file, and a file from before it existed
+// keeps its meaning: show_tab = true reads as both, anything else as title.
+{
+  const os = require('node:os');
+  const { spawnSync } = require('node:child_process');
+  const readRowLabel = (toml) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-config-'));
+    fs.writeFileSync(path.join(dir, 'config.toml'), toml);
+    const out = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./lib/config').rowLabel)"], {
+      cwd: root,
+      env: { ...process.env, HERDR_PLUGIN_CONFIG_DIR: dir },
+      encoding: 'utf8',
+    });
+    fs.rmSync(dir, { recursive: true, force: true });
+    return out.stdout;
+  };
+  const cases = [
+    ['row_label = "tab"\nshow_tab = true\n', 'tab'],
+    ['show_tab = true\n', 'both'],
+    ['show_tab = false\n', 'title'],
+    ['row_label = "sideways"\n', 'title'],
+    ['', 'title'],
+  ];
+  for (const [toml, expected] of cases) {
+    const got = readRowLabel(toml);
+    if (got !== expected)
+      problems.push(`config: ${JSON.stringify(toml)} reads row_label as ${got}, expected ${expected}`);
+  }
+}
+
+// Liveness is asked of the endpoint, never of a pid file.
+//
+// `kill(pid, 0)` on the pid file only says that SOME process has the number,
+// and after a restart that can be a browser (#19). The names are gone so a
+// caller cannot keep using them: an async replacement under the old name
+// would have returned a Promise, which is always truthy, and a launcher
+// asking `if (running()) return` would never start a daemon again.
+for (const dir of ['lib', 'bin']) {
+  for (const file of fs.readdirSync(path.join(root, dir))) {
+    if (!file.endsWith('.js')) continue;
+    const text = fs.readFileSync(path.join(root, dir, file), 'utf8');
+    for (const name of ['animatorRunning', 'pidAlive']) {
+      if (text.includes(name)) {
+        problems.push(`${dir}/${file}: still refers to ${name} — ask state.daemonStatus() instead`);
+      }
+    }
+  }
+}
+
+// The build hook must not start a process. It runs inside Herdr's temporary
+// checkout, which Herdr renames into place afterwards; a daemon started from
+// there inherits that directory as its cwd, and on Windows a directory that
+// is some process's cwd cannot be renamed — every install failed with os
+// error 32 (#23). The daemon starts from the startup hooks instead.
+{
+  const text = fs.readFileSync(path.join(root, 'bin', 'setup.js'), 'utf8');
+  for (const name of ['detachedNode', 'child_process', 'spawn(']) {
+    if (text.includes(name)) problems.push(`bin/setup.js: starts a process (${name}) from the build hook (#23)`);
   }
 }
 

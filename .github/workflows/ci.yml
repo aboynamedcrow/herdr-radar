@@ -1,0 +1,104 @@
+name: CI
+
+# What a contributor cannot run themselves, run for them. The last three pull
+# requests here arrived with some version of "no automated check could be run
+# against this repository, so this change is unverified" — the invariants in
+# tools/check.js only ever ran on a maintainer's machine, and neither the author
+# nor the reviewer saw them until after the fact.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Nothing here writes anything back, and `pull_request` (never
+# `pull_request_target`) is what keeps a fork's code away from anything it could
+# write with: it runs from the merge ref with a read-only token and no secrets.
+# The repository default is already read, but that is a settings toggle anyone
+# with admin can flip; declaring it here is what pins it.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: invariants
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      # The invariants: identity declarations, every script parses, the tab-bar
+      # poll interval stays above its timeout, sidebar inks clear a contrast
+      # floor, every glyph falls inside a mapped codepoint range, and the
+      # workspace order settles instead of moving again on its own wake. Each
+      # one is there because the thing it checks went wrong once.
+      - run: npm run check
+      # Behaviour, in test/: what has to be driven rather than read.
+      - run: npm test
+      # And that the invariants can fail: each known-bad shape is put back and
+      # must turn the check red. A check that can only pass is not a check.
+      - run: npm run prove
+      - run: npx prettier --check .
+
+  font:
+    name: font is not stale
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # tools/build_font.py reads tools/codepoints.toml with tomllib.
+          python-version: '3.12'
+      - run: pip install -r tools/requirements.txt
+      # dist/*.ttf is committed and build_patched_font.py says the patched face
+      # "goes stale silently" — edit a mark or a codepoint, forget to rebuild,
+      # and every install afterwards ships the old glyphs with no error
+      # anywhere.
+      #
+      # The icon font is byte-reproducible (FONT_TIMESTAMP is fixed for exactly
+      # this) as long as fontTools does not move under it, which is why
+      # requirements.txt pins rather than floors it — so rebuilding and diffing
+      # it is an exact test. The patched face is not reproducible at all: two consecutive builds of it differ, so a byte diff there would
+      # fail on every run and teach everyone to ignore this job. It carries its
+      # own answer instead — build_patched_font.py stamps nameID 3 with a hash
+      # of the icon font it copied from, so comparing that stamp against the
+      # icon font is precise and needs no rebuild at all.
+      - run: python tools/build_font.py
+      - name: Icon font matches a rebuild
+        run: |
+          if ! git diff --quiet -- dist/HerdrAgentIconsMax-Regular.ttf; then
+            echo "::error::dist/HerdrAgentIconsMax-Regular.ttf is stale — run tools/build_font.py and commit dist/"
+            exit 1
+          fi
+      - name: Patched font was built from this icon font
+        run: |
+          python - <<'PY'
+          import hashlib, sys
+          from pathlib import Path
+          from fontTools.ttLib import TTFont
+
+          icons = Path("dist/HerdrAgentIconsMax-Regular.ttf")
+          patched = Path("dist/JetBrainsMonoHerdr-Regular.ttf")
+          want = hashlib.sha256(icons.read_bytes()).hexdigest()[:8]
+          got = None
+          for record in TTFont(patched)["name"].names:
+              if record.nameID == 3:
+                  got = record.toUnicode().rsplit("; ", 1)[-1]
+                  break
+          if got != want:
+              print(
+                  f"::error::{patched} was built from icon font {got}, but the "
+                  f"committed one is {want} — rerun tools/build_patched_font.py "
+                  "and commit dist/"
+              )
+              sys.exit(1)
+          print(f"patched font carries icon stamp {want}")
+          PY

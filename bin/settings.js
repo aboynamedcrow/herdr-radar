@@ -25,6 +25,7 @@ const state = require('../lib/state');
 const view = require('../lib/view');
 const managed = require('../lib/managed-config');
 const { detachedNode } = require('../lib/spawn');
+const { scrollTop } = require('../lib/scroll-window');
 const { pluginId, pluginConfigDir, ensureDir, stateRoot } = require('../lib/paths');
 const { editTopLevel, editTable, writeAtomic } = require('../lib/toml-blocks');
 const identity = require('../lib/identity');
@@ -70,6 +71,12 @@ const FIELDS = [
     virtual: true,
     read: orderValue,
     help: "Agents panel order: active (grouped, busiest first, stale last), recent (flat, by activity) or off (Herdr's own order). Applies while agents_panel is plugin.",
+  },
+  {
+    key: 'reorder_workspaces',
+    kind: 'bool',
+    fallback: false,
+    help: 'Make Herdr workspace indices follow Radar activity order, so prefix+shift+1..9 follows the panel.',
   },
   {
     key: 'variant',
@@ -123,7 +130,23 @@ const FIELDS = [
     help: 'Spaces members sit in under a workspace header; 0 = flat list.',
   },
   { key: 'group_gap', kind: 'bool', fallback: true, help: 'A blank row between workspace groups.' },
-  { key: 'show_tab', kind: 'bool', fallback: false, help: 'Show the tab number on the state line.' },
+  {
+    key: 'split_corner',
+    kind: 'bool',
+    fallback: false,
+    help: 'Hang the other panes of a split screen off the first with a corner; off draws them as plain rows.',
+  },
+  {
+    key: 'row_label',
+    kind: 'enum',
+    options: ['title', 'tab', 'both'],
+    fallback: 'title',
+    // A file from before this setting says `show_tab = true`, which renders
+    // as `both` (lib/config.js); the popup shows what renders, not the
+    // fallback.
+    legacy: (raw) => (raw.show_tab === true ? 'both' : undefined),
+    help: "What names an agent row: the session's title, its tab's name, or both.",
+  },
   {
     key: 'trim_group_prefix',
     kind: 'bool',
@@ -182,7 +205,7 @@ function currentValues(text) {
       continue;
     }
     const holder = field.table ? (raw[field.table] ?? {}) : raw;
-    values.set(field, holder[field.key]);
+    values.set(field, holder[field.key] ?? field.legacy?.(raw));
   }
   return values;
 }
@@ -237,6 +260,12 @@ const INV = '\x1b[7m';
 const ACCENT = '\x1b[38;5;110m';
 const WARN = '\x1b[38;5;179m';
 
+// A setting's name as the file spells it: `colors.active_row_bg_light` for a
+// key inside a table.
+function fieldName(field) {
+  return field.table ? `${field.table}.${field.key}` : field.key;
+}
+
 function codepoint(ch) {
   return ch ? `U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}` : '';
 }
@@ -286,6 +315,53 @@ function wrap(text, cols) {
 // jump as the cursor moves between short and long descriptions.
 const HELP_ROWS = 2;
 
+const BLANK_ABOVE_TITLE_ROWS = 1;
+const TITLE_ROWS = 1;
+const LIST_BOUNDARY_ROWS = 2;
+const GAP_BELOW_HELP_ROWS = 1;
+const KEY_HINT_ROWS = 1;
+const TRAILING_NEWLINE_ROWS = 1;
+
+// Every row of the popup that is not a setting.
+const FIXED_ROWS =
+  BLANK_ABOVE_TITLE_ROWS +
+  TITLE_ROWS +
+  LIST_BOUNDARY_ROWS +
+  HELP_ROWS +
+  GAP_BELOW_HELP_ROWS +
+  KEY_HINT_ROWS +
+  TRAILING_NEWLINE_ROWS;
+
+const NAME_VALUE_GAP = 2;
+const DEFAULT_POPUP_ROWS = 26;
+const MINIMUM_LIST_ROWS = 3;
+const STATUS_ROWS = 1;
+
+// The name column fits the longest name, so every value starts in one column.
+function nameColumnWidth() {
+  return Math.max(...FIELDS.map((field) => width(fieldName(field)))) + NAME_VALUE_GAP;
+}
+
+// The list gets whatever the popup's height leaves over.
+function listRoom(hasStatus) {
+  let rows = (process.stdout.rows || DEFAULT_POPUP_ROWS) - FIXED_ROWS;
+  if (hasStatus) rows -= STATUS_ROWS;
+  return Math.max(MINIMUM_LIST_ROWS, rows);
+}
+
+// The visible rows scroll with the cursor; the hidden counts mark the rest.
+function listWindow(cursor, room, top) {
+  const nextTop = scrollTop(FIELDS.length, cursor, room, top);
+  const hiddenAbove = nextTop;
+  const hiddenBelow = Math.max(0, FIELDS.length - nextTop - room);
+  return {
+    top: nextTop,
+    fields: FIELDS.slice(nextTop, nextTop + room),
+    hiddenAbove,
+    hiddenBelow,
+  };
+}
+
 /* ---------------------------------------------------------------- editor */
 
 class Editor {
@@ -294,6 +370,7 @@ class Editor {
     this.saved = currentValues(this.text);
     this.values = new Map(this.saved);
     this.cursor = 0;
+    this.top = 0;
     this.editing = null; // { buffer } while typing a text value
     this.status = '';
     this.quitArmed = false;
@@ -384,9 +461,11 @@ class Editor {
     // is painting, then start a fresh one with the environment Herdr gave this
     // popup, config directory included.
     const reply = await control.request({ cmd: 'stop' }, 10000);
-    const deadline = Date.now() + 4000;
-    while (reply?.ok && state.animatorRunning() && Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    // A restart is what was asked for, so a daemon that answered but did not
+    // leave is ended: the launcher below would otherwise find it still
+    // answering, call it healthy, and keep the old settings running.
+    if (reply?.ok && !(await state.waitForExit(4000))) {
+      await state.terminate((await state.daemonStatus()).pid);
     }
     let note = '';
     if (viewChanged) {
@@ -405,25 +484,27 @@ class Editor {
 
   render() {
     const cols = Math.max(60, (process.stdout.columns || 84) - 2);
-    const keyW = 24;
+    const keyW = nameColumnWidth();
+    const visible = listWindow(this.cursor, listRoom(this.status), this.top);
+    this.top = visible.top;
     const out = [''];
     // Title left, plugin id right, the gap between them measured — not
     // guessed — so the pair fits the popup's width exactly and never wraps.
     const title = `${identity.NAME} settings`;
     const id = pluginId();
     out.push(` ${BOLD}${title}${R}${DIM}${' '.repeat(Math.max(1, cols - 1 - width(title) - width(id)))}${id}${R}`);
-    out.push('');
-    FIELDS.forEach((field, i) => {
-      const selected = i === this.cursor;
+    out.push(visible.hiddenAbove ? `   ${DIM}↑ ${visible.hiddenAbove} more${R}` : '');
+    visible.fields.forEach((field, offset) => {
+      const selected = visible.top + offset === this.cursor;
       const changed = this.values.get(field) !== this.saved.get(field);
-      const name = field.table ? `${field.table}.${field.key}` : field.key;
+      const name = fieldName(field);
       const value =
         selected && this.editing ? `${INV}${this.editing.buffer}${R}${DIM}▏${R}` : show(field, this.values.get(field));
       const marker = changed ? `${WARN}*${R}` : ' ';
       const row = `${marker} ${pad(name, keyW)} ${value}`;
       out.push(selected ? ` ${ACCENT}▸${R} ${BOLD}${row}${R}` : `   ${row}`);
     });
-    out.push('');
+    out.push(visible.hiddenBelow ? `   ${DIM}↓ ${visible.hiddenBelow} more${R}` : '');
     const help = wrap(this.field.help, cols - 1).slice(0, HELP_ROWS);
     while (help.length < HELP_ROWS) help.push('');
     for (const line of help) out.push(` ${DIM}${line}${R}`);
