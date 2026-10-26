@@ -9,7 +9,8 @@ herdr pane report-metadata <pane> --source attention-watch --token 'attention=<c
 
 The daemon scrubs the value and limits it to 200 characters.
 Herdr 0.9.5 limits stored token values to 80 characters. Clients receive the shorter value.
-The daemon clears the token with each release. A restart clears tokens from its own source.
+The daemon clears the token before it releases the `blocked` report.
+If the clear fails, the daemon retries it before release. A restart clears tokens from its own source.
 
 ```sh
 herdr pane report-metadata <pane> --source attention-watch --clear-token attention
