@@ -693,6 +693,16 @@ const cases = [
     true,
     'test/restart.test.js',
   ],
+
+  // bin/settings.js — a save writes every value so it reads back as itself.
+  [
+    'bin/settings.js',
+    '  if (!/["\\\\]/.test(text)) return `"${text}"`;\n',
+    '  return `"${text}"`;\n',
+    'settings: a save double-quotes a value holding a quote, so the line breaks',
+    true,
+    'test/settings-literal.test.js',
+  ],
 ];
 
 function withEdit(file, from, to, label, expectCaught = true, via = 'check') {

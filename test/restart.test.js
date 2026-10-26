@@ -17,6 +17,8 @@ const path = require('node:path');
 // Keep the error log and the rest of the state off the live daemon's files,
 // and any call that slips past the mocks off the live server.
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-restart-'));
+// HERDR_RADAR_STATE outranks the plugin state dir (lib/paths.js), so both.
+process.env.HERDR_RADAR_STATE = scratch;
 process.env.HERDR_PLUGIN_STATE_DIR = scratch;
 process.env.HERDR_SOCKET_PATH = path.join(scratch, 'no-server.sock');
 
