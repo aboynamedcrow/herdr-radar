@@ -249,6 +249,8 @@ exec claude "$@"
 | `group_indent` | `2` | ツリーの階層ごとの空白数。`0` でも見出しと空行は残り、ツリー線は描かない。フラット表示は `prefix+a` |
 | `group_gap` | `true` | グループ間の空行 |
 | `split_corner` | `false` | 分割画面の残りのペインを `├─` で最初のペインの下にぶら下げる |
+| `multi_machine` | `false` | 各ワークスペース見出しの後ろにマシン名を付ける（例 `web · Machine-One`）。保存済み SSH マシン上のセッションを見分けるためのもの。見出しは各マシンが自分で書くので、マシンごとに設定する |
+| `machine_label` | `""` | `multi_machine` が表示する名前。空ならホスト名 |
 | `row_label` | `title` | 行の名前：`title` セッションのタイトル、`tab` タブ名、`both` 両方（旧 `show_tab = true`） |
 | `trim_group_prefix` | `true` | 見出しと同じ名前でタイトルが始まるとき、その部分を落とす |
 | `worktree_mark` | `U+F418` | worktree 見出しのマーク（Nerd Font が必要）。空で非表示 |
