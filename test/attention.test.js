@@ -92,7 +92,7 @@ function agent(pane = 'w1:p1', title = 'Synthetic task', tokens = {}) {
   };
 }
 
-test('a blocked row uses its attention token and rejects a stale token during an idle hold', async (t) => {
+test('a blocked row uses its attention token across an idle hold and clears its title', async (t) => {
   const reason = 'word: Choose the synthetic option.';
   const agents = [agent('w1:p1', 'Synthetic task', { attention: reason }), agent('w1:p2', 'Other task')];
   const { frame, rows } = fixture(t, agents);
@@ -109,13 +109,45 @@ test('a blocked row uses its attention token and rejects a stale token during an
   agents[0].agent_status = 'idle';
   agents[0].tokens = { attention: reason };
   await frame.render(12000);
-  assert(rows.get('w1:p1').title_blocked.includes('Synthetic task'));
-  assert(!rows.get('w1:p1').title_blocked.includes(reason));
+  assert(rows.get('w1:p1').title_blocked.includes(reason));
 
   agents[0].agent_status = 'working';
+  agents[0].tokens = {};
   await frame.render(13000);
   assert.equal(rows.get('w1:p1').title_blocked, null);
   assert(!rows.get('w1:p1').title_working.includes(reason));
+});
+
+test('an idle token row uses blocked priority and restores its normal title when cleared', async (t) => {
+  const reason = 'word: Choose the synthetic option.';
+  const agents = [agent('w1:p1', 'Synthetic task', { attention: reason }), agent('w1:p2', 'Other task')];
+  agents[0].agent_status = 'idle';
+  agents[0].agent = 'codex';
+  agents[1].agent_status = 'working';
+  agents[1].agent = 'codex';
+  const { frame, rows } = fixture(t, agents);
+  // Exercise the real workspace priority with mocked writes.
+  frame.spaceJobs = Frame.prototype.spaceJobs;
+  const spaces = new Map();
+  t.mock.method(herdr, 'reportWorkspaceMetadataAsync', async (_workspace, _source, tokens) => {
+    for (const [key, value] of Object.entries(tokens)) spaces.set(key, value);
+    return true;
+  });
+  await frame.render(10000);
+  assert(rows.get('w1:p1').title_blocked.includes(reason));
+  assert(rows.get('w1:p1').state_blocked);
+  assert(spaces.get('space_blocked'));
+  // Feed the published mark into later snapshots, as the real server does.
+  Object.assign(agents[0].tokens, rows.get('w1:p1'));
+  await frame.render(11000);
+  delete agents[0].tokens.attention;
+  await frame.render(12000);
+  assert.equal(rows.get('w1:p1').title_blocked, null);
+  assert(rows.get('w1:p1').title_idle.includes('Synthetic task'));
+  assert.equal(spaces.get('space_blocked'), null);
+  assert(spaces.get('space_working_other'));
+  await frame.render(13000);
+  assert.equal(rows.get('w1:p1').title_blocked, null);
 });
 
 test('a configured title hook hides attention text for its pane through render', async (t) => {
@@ -127,6 +159,7 @@ test('a configured title hook hides attention text for its pane through render',
   assert(rows.get('w1:p1').title_blocked.includes('[hidden]'));
 
   agents[0].tokens = { attention: reason };
+  agents[0].agent_status = 'idle';
   agents[1].tokens = { attention: 'word: Other synthetic project?' };
   await frame.render(11000);
   assert(rows.get('w1:p1').title_blocked.includes('[hidden]'));
