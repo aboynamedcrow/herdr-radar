@@ -204,9 +204,21 @@ const cases = [
   // lib/state.js — a vendor we can name must never end up nameless (#10).
   [
     'lib/state.js',
-    'if (!clean || locationOnly(clean, cwd)) return nameFor(agent) ?? clean;',
-    'if (locationOnly(clean, cwd)) return nameFor(agent) ?? clean;',
+    'if (!clean || locationOnly(clean, cwd, !WRITES_OWN_TITLE.has(agent))) return nameFor(agent) ?? clean;',
+    'if (locationOnly(clean, cwd, !WRITES_OWN_TITLE.has(agent))) return nameFor(agent) ?? clean;',
     'title: no fallback for an empty title (#10, shipped v1.0.0–v1.3.9)',
+  ],
+  [
+    'lib/state.js',
+    'if (!clean || locationOnly(clean, cwd, !WRITES_OWN_TITLE.has(agent))) return nameFor(agent) ?? clean;',
+    'if (!clean || locationOnly(clean, cwd, true)) return nameFor(agent) ?? clean;',
+    'title: a Claude Code session named after its folder shows "Claude Code" (#66, shipped through v1.4.9)',
+  ],
+  [
+    'lib/state.js',
+    'if (!clean || locationOnly(clean, cwd, !WRITES_OWN_TITLE.has(agent))) return nameFor(agent) ?? clean;',
+    'if (!clean || locationOnly(clean, cwd, false)) return nameFor(agent) ?? clean;',
+    "title: codex's bare-folder title stays instead of naming the vendor",
   ],
   [
     'lib/state.js',
@@ -217,7 +229,7 @@ const cases = [
   // The other direction: a title that says something must keep saying it.
   [
     'lib/state.js',
-    'if (!clean || locationOnly(clean, cwd)) return nameFor(agent) ?? clean;\n  return clean;',
+    'if (!clean || locationOnly(clean, cwd, !WRITES_OWN_TITLE.has(agent))) return nameFor(agent) ?? clean;\n  return clean;',
     'return nameFor(agent) ?? clean;',
     'title: vendor name always wins, so real titles are lost',
   ],
