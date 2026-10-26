@@ -108,8 +108,7 @@ The daemon that is already running keeps the version it started with until Herdr
 To switch to the new one now, restart just the daemon; your panes are not touched:
 
 ```sh
-herdr plugin action invoke hhdebb.herdr-radar.state-stop
-herdr plugin action invoke hhdebb.herdr-radar.state-start
+herdr plugin action invoke hhdebb.herdr-radar.state-restart
 ```
 
 ### Or hand it to an agent
@@ -296,7 +295,7 @@ switch_workspace = "prefix+shift+1..9"
 
 The first two are live state; the rest live in
 `$(herdr plugin config-dir hhdebb.herdr-radar)/config.toml` and can be edited by hand —
-then `state-stop` and `state-start`. The file appears the first time the popup saves; before
+then `state-restart`. The file appears the first time the popup saves; before
 that, create it with the keys above (booleans unquoted: `group_gap = false`).
 
 Both this file and Herdr's `config.toml` can be symlinks into a dotfiles repository: the
@@ -357,7 +356,7 @@ versions refused the whole install instead, with the reason only in the plugin l
 <summary><b>Changed a setting, nothing happened</b></summary>
 
 The daemon reads its config at start. `s` in the settings popup restarts it; after a hand edit,
-`state-stop` then `state-start`. Editing the three managed blocks in `config.toml` directly
+`state-restart`. Editing the three managed blocks in `config.toml` directly
 does not stick — the next `configure` writes them back.
 </details>
 

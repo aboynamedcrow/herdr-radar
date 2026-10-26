@@ -670,6 +670,17 @@ const cases = [
     true,
     'test/machine-label.test.js',
   ],
+
+  // bin/agent-state.js — `state-restart` starts only once the old daemon has
+  // gone (#65).
+  [
+    'bin/agent-state.js',
+    '  await stopAnimator();\n',
+    '  stopAnimator();\n',
+    'restart: the start runs beside the stop, finds the old daemon healthy, and nothing replaces it',
+    true,
+    'test/restart.test.js',
+  ],
 ];
 
 function withEdit(file, from, to, label, expectCaught = true, via = 'check') {

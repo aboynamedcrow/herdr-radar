@@ -107,8 +107,7 @@ herdr plugin update hhdebb.herdr-radar
 すぐ新しい版に切り替えるには、デーモンだけを再起動します。ペインには影響しません：
 
 ```sh
-herdr plugin action invoke hhdebb.herdr-radar.state-stop
-herdr plugin action invoke hhdebb.herdr-radar.state-start
+herdr plugin action invoke hhdebb.herdr-radar.state-restart
 ```
 
 ### エージェントに任せる
@@ -258,7 +257,7 @@ exec claude "$@"
 | `colors.active_row_bg_dark` | `#414868` | ダークテーマの選択行の背景 |
 
 最初の 2 つはライブの状態です。残りは `$(herdr plugin config-dir hhdebb.herdr-radar)/config.toml`
-にあり、手で編集してもかまいません。編集後は `state-stop`、続けて `state-start`。このファイルは
+にあり、手で編集してもかまいません。編集後は `state-restart` を実行します。このファイルは
 ポップアップが最初に保存したときに作られます。それより前に手で編集するなら、上の表のキーで自分で
 作ってください（真偽値は引用符なし：`group_gap = false`）。
 
@@ -304,7 +303,7 @@ Ghostty では割り当てが解決したかを答えられるのは `ghostty +s
 <summary><b>設定を変えたのに反映されない</b></summary>
 
 デーモンは起動時に設定を読みます。設定ポップアップの `s` は再起動します。手で編集したあとは
-`state-stop` の後に `state-start`。`config.toml` の 3 つの管理ブロックを直接編集しても、次の
+`state-restart` を実行します。`config.toml` の 3 つの管理ブロックを直接編集しても、次の
 `configure` で書き戻されます。
 </details>
 
