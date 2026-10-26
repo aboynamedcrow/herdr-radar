@@ -9,8 +9,8 @@ Radar shows attention when the state is `blocked` or the token is not empty.
 herdr pane report-metadata <pane> --source attention-watch --token 'attention=<class>: <first line>'
 ```
 
-The daemon scrubs the value and limits it to 200 characters.
-Herdr 0.9.5 limits stored token values to 80 characters. Clients receive the shorter value.
+The daemon scrubs the value and writes at most 80 characters.
+Herdr 0.9.5 also limits stored token values to 80 characters.
 The daemon clears the token when the pane no longer needs ingwon.
 If the clear fails, the daemon retries it. A restart clears tokens from its own source.
 
@@ -31,4 +31,11 @@ It uses the token as the row title after the configured title hook.
 An absent or empty token restores the usual title.
 Token attention does not create a blocked hold after the token clears.
 The existing holds still apply to a native `blocked` state.
+Token attention consumes an unseen done badge, as native blocked attention does.
+Clearing the token does not restore that badge.
 Radar does not read a pane's screen for this text.
+
+Radar publishes `radar_attention_only=1` beside a blocked mark that has no native question hold.
+A replacement Radar process reads this marker before it recovers native blocked holds.
+Radar clears the marker when the blocked mark clears or a native question takes priority.
+Its stop, uninstall, and orphan cleanup paths also clear the marker.
