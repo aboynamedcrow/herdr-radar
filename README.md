@@ -108,8 +108,7 @@ The daemon that is already running keeps the version it started with until Herdr
 To switch to the new one now, restart just the daemon; your panes are not touched:
 
 ```sh
-herdr plugin action invoke hhdebb.herdr-radar.state-stop
-herdr plugin action invoke hhdebb.herdr-radar.state-start
+herdr plugin action invoke hhdebb.herdr-radar.state-restart
 ```
 
 ### Or hand it to an agent
@@ -261,6 +260,8 @@ the config file and restarts the daemon.
 | `group_indent` | `2` | spaces per tree level; `0` keeps headers and gaps but draws no tree lines; use `prefix+a` for the flat list |
 | `group_gap` | `true` | a blank row between groups |
 | `split_corner` | `false` | hang the other panes of a split screen off the first with a `├─` corner |
+| `multi_machine` | `false` | put the machine's name after each workspace header, `web · Machine-One`, for sessions on saved SSH machines; set it on each machine, since each one names its own |
+| `machine_label` | `""` | the name `multi_machine` shows; empty uses the hostname |
 | `reorder_workspaces` | `false` | make Herdr's workspace indices follow Radar's activity order |
 | `row_label` | `title` | what names an agent row: `title`, `tab` (the tab's name) or `both`; replaces `show_tab` |
 | `trim_group_prefix` | `true` | drop the workspace name from a title when the header above already shows it |
@@ -294,7 +295,7 @@ switch_workspace = "prefix+shift+1..9"
 
 The first two are live state; the rest live in
 `$(herdr plugin config-dir hhdebb.herdr-radar)/config.toml` and can be edited by hand —
-then `state-stop` and `state-start`. The file appears the first time the popup saves; before
+then `state-restart`. The file appears the first time the popup saves; before
 that, create it with the keys above (booleans unquoted: `group_gap = false`).
 
 Both this file and Herdr's `config.toml` can be symlinks into a dotfiles repository: the
@@ -355,7 +356,7 @@ versions refused the whole install instead, with the reason only in the plugin l
 <summary><b>Changed a setting, nothing happened</b></summary>
 
 The daemon reads its config at start. `s` in the settings popup restarts it; after a hand edit,
-`state-stop` then `state-start`. Editing the three managed blocks in `config.toml` directly
+`state-restart`. Editing the three managed blocks in `config.toml` directly
 does not stick — the next `configure` writes them back.
 </details>
 
