@@ -17,14 +17,21 @@ const path = require('node:path');
 test.after(() => fs.rmSync(scratch, { recursive: true, force: true }));
 
 // Keep the error log and the rest of the state off the live daemon's files,
-// and any call that slips past the mocks off the live server.
+// and any call that slips past the mocks off the live server and the live
+// daemon.
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-restart-'));
 // HERDR_RADAR_STATE outranks the plugin state dir (lib/paths.js), so both.
 process.env.HERDR_RADAR_STATE = scratch;
 process.env.HERDR_PLUGIN_STATE_DIR = scratch;
-process.env.HERDR_SOCKET_PATH = path.join(scratch, 'no-server.sock');
+// A call can outlive its test's mocks: prove's "stop is not awaited" mutant
+// leaves stopAnimator polling after the test ends. On an endpoint shared with
+// the user's daemon, it found that daemon still answering and terminated it.
+// The control endpoint is keyed on the state dir (lib/control.js), so the
+// scratch dir gives this file an endpoint of its own.
+process.env.HERDR_SOCKET_PATH = path.join(scratch, 'sessions', `radar-restart-${process.pid}`, 'herdr.sock');
 
 const control = require('../lib/control');
+const paths = require('../lib/paths');
 const setup = require('../lib/setup');
 const spawn = require('../lib/spawn');
 const state = require('../lib/state');
@@ -44,6 +51,14 @@ function daemonThatLingers(t, lingerMs) {
   });
   return () => stoppedAt;
 }
+
+test('this file talks to a control endpoint of its own', () => {
+  const own = [scratch, paths.digest(paths.canonical(scratch))];
+  assert.ok(
+    own.some((part) => control.endpoint().includes(part)),
+    control.endpoint(),
+  );
+});
 
 test('restart launches a new daemon only after the old one has gone', async (t) => {
   const stoppedAt = daemonThatLingers(t, 400);
