@@ -80,6 +80,35 @@ test('a worktree with no parent agent retains its repository header', async () =
   assert.match(rows.get('task').group, /^└─ .*Sidebar task$/);
 });
 
+test('a separated block of two worktrees opens with a tee and closes with a corner', async () => {
+  const tree = {
+    parentOf: new Map([
+      ['task', 'dot'],
+      ['sibling', 'dot'],
+    ]),
+  };
+  const rows = await rowsFor(['dot', 'other', 'task', 'sibling'], tree);
+  assert.equal(rows.get('task').group_parent, 'dot');
+  assert.match(rows.get('task').group, /^├─ .*Sidebar task$/);
+  assert.equal(rows.get('sibling').group_parent, null);
+  assert.ok(rows.get('sibling').group.startsWith(`${state.INDENT}└─ `), rows.get('sibling').group);
+  assert.equal(rows.get('task').gap, null);
+});
+
+test('adjacent orphans with no repo id keep a repository header each', async () => {
+  const tree = {
+    orphanRepo: new Map([
+      ['task', 'dot'],
+      ['sibling', 'dot'],
+    ]),
+  };
+  const rows = await rowsFor(['task', 'sibling'], tree);
+  assert.equal(rows.get('task').group_parent, 'dot');
+  assert.equal(rows.get('sibling').group_parent, 'dot');
+  assert.match(rows.get('task').group, /^└─ .*Sidebar task$/);
+  assert.match(rows.get('sibling').group, /^└─ .*Second task$/);
+});
+
 test('a parent after its child does not repeat the shared family header', async () => {
   const rows = await rowsFor(['task', 'dot', 'other'], { parentOf: new Map([['task', 'dot']]) });
   assert.equal(rows.get('task').group_parent, 'dot');
